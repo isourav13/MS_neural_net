@@ -7,7 +7,8 @@ tests = ['curl', 'wget', 'ping', 'traceroute', 'nslookup', 'telnet', 'netcat', '
 
 # Semantic hierarchy mapping tests to their specificity levels
 # I defined a semantic hierarchy (hierarchical_semantics) that assigns each test a specificity level.
-# I implemented a function predict_relevance_hierarchical_semantics() that predicts the relevance of tests based on their hierarchical semantics. This function uses the specificity level of the error to determine which tests are relevant, and then predicts their relevance using the trained model.
+# I implemented a function predict_relevance_hierarchical_semantics() that predicts the relevance of tests based on their hierarchical semantics. 
+# This function uses the specificity level of the error to determine which tests are relevant, and then predicts their relevance using the trained model.
 
 #Hierarchical levels
 
@@ -76,5 +77,20 @@ print("Relevance of tests for '{}' error based on association semantics:".format
 print(predict_relevance_association_semantics(error))
 
 
+# Function to predict relevance using hierarchical semantics
+def predict_relevance_hierarchical_semantics(error, tests):
+    relevant_tests = [test for test, level in hierarchical_semantics.items() if level <= hierarchical_semantics[error]]
+    test_indices = [test_to_index[test] for test in relevant_tests]
+    error_index = error_to_index[error]
+    error_input = tf.one_hot(error_index, len(reported_errors)).numpy().reshape(1, -1)
+    test_input = np.sum([tf.one_hot(test_index, len(tests)) for test_index in test_indices], axis=0).reshape(1, -1)
+    combined_input = np.concatenate((error_input, test_input), axis=1)
+    predicted_probs = model.predict(combined_input)
+    test_relevance = {tests[i]: predicted_probs[0][i] for i in range(len(tests))}
+    return test_relevance
 
+# Example usage
+error = 'timeout'
+print("Relevance of tests for '{}' error based on hierarchical semantics:".format(error))
+print(predict_relevance_hierarchical_semantics(error, tests))
 
