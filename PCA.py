@@ -50,7 +50,7 @@ print("Relevance of tests for 'timeout' error:")
 print(test_relevance)
 
 # Extract features from the last hidden layer
-feature_extractor = tf.keras.Model(inputs=model.input, outputs=model.layers[-2].output)
+feature_extractor = tf.keras.Model(inputs=model.input, outputs=model.layers[0].output)
 
 # Extract features for a specific error and tests
 extracted_features = feature_extractor.predict(combined_input)
