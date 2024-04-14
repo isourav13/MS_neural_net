@@ -1,6 +1,6 @@
 import numpy as np
 import tensorflow as tf
-from sklearn.decomposition import PCA
+
 
 reported_errors = ['timeout', 'data_mismatch', 'connection_error', 'server_down', 'invalid_response', 'authentication_error']
 tests = ['curl', 'wget', 'ping', 'traceroute', 'nslookup', 'telnet', 'netcat', 'tcpdump', 'dns_query', 'ssl_check']
@@ -23,6 +23,8 @@ print("Train_Error", X_train_error)
 print("Train_Test", X_train_test)
 print("X_Train Input: ", X_train)
 
+
+
 y_train = np.zeros((len(training_data), len(tests))) # Initialize target tensor
 for i, (_, tests_indices) in enumerate(training_data):
     y_train[i, tests_indices] = 1  
@@ -32,31 +34,43 @@ print("Y_Train Target: ", y_train)
 model = tf.keras.Sequential([
     tf.keras.layers.Input(shape=(len(reported_errors) + len(tests),)), 
     tf.keras.layers.Dense(64, activation='relu'), 
-    tf.keras.layers.Dense(32, activation='relu'), 
+    tf.keras.layers.Dense(32, activation='relu'),  # Feature extraction layer
     tf.keras.layers.Dense(len(tests), activation='sigmoid') 
 ])
 
-model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+# Access the output of the second-last layer using `get_layer`
+extracted_features = model.get_layer(index=-2).output
 
+# Define a new model to map features to semantics (optional)
+feature_to_semantics_model = tf.keras.Sequential([
+  tf.keras.layers.Dense(16, activation='relu'),
+  tf.keras.layers.Dense(len(tests), activation='softmax')  # Softmax for probability distribution
+])
+
+# Compile the feature_to_semantics_model (if used)
+feature_to_semantics_model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+print("feature_to_semantics_model", feature_to_semantics_model)
+
+# Train the main model
+model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
 model.fit(X_train, y_train, epochs=50, batch_size=32)
 
-# After training, you can use the model to predict the relevance of tests for any reported error
+# After training, you can use the model to predict
+
 error_input = tf.one_hot(error_to_index['timeout'], len(reported_errors)).numpy().reshape(1, -1)
 test_input = np.sum([tf.one_hot(test_index, len(tests)) for test_index in training_data[0][1]], axis=0).reshape(1, -1)
 combined_input = np.concatenate((error_input, test_input), axis=1)
+
+# Get extracted features
+extracted_features_output = model.predict(combined_input)[0].reshape(1, -1)
+print("extracted_features_output", extracted_features_output)
+
+# Use the separate model for semantic interpretation (optional)
+predicted_semantics = feature_to_semantics_model.predict(extracted_features_output)[0]
+semantics_dict = {i: tests[i] for i in range(len(tests))}
+print(semantics_dict)
+print("Semantic relevance of tests for 'timeout' error (using separate model):")
+print({semantics_dict[i]: predicted_semantics[i] for i in range(len(predicted_semantics))})
+
+# Or interpret features directly (if not using separate model)
 predicted_probs = model.predict(combined_input)
-test_relevance = {tests[i]: predicted_probs[0][i] for i in range(len(tests))}
-print("Relevance of tests for 'timeout' error:")
-print(test_relevance)
-
-# Extract features from the last hidden layer
-feature_extractor = tf.keras.Model(inputs=model.input, outputs=model.layers[0].output)
-
-# Extract features for a specific error and tests
-extracted_features = feature_extractor.predict(combined_input)
-
-# Perform PCA for dimensionality reduction
-pca = PCA(n_components=2)  # You can choose the number of components based on your requirement
-semantic_features = pca.fit_transform(extracted_features)
-
-print("Semantic features shape after PCA:", semantic_features.shape)
