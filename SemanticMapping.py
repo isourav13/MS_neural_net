@@ -80,6 +80,8 @@ error-test associations (e.g. ping, traceroute, etc for "Timeout" type of error)
 and then using backpropagation, the mapping takes place. I have used Specificity, Coverage,
 and Location for now and split them into 3 tiers (Level I, II and III - which I will describe later) each. """
 
+"""abstract features: matrix multiplication between the selected input features (the first half of the input) and the semantic weights of the layer."""
+
 # Define the model
 model = tf.keras.Sequential([
     tf.keras.layers.Input(shape=(len(reported_errors) + len(tests),)), 
