@@ -53,6 +53,15 @@ for i, (_, tests_indices) in enumerate(training_data):
         abstract_features = tf.matmul(inputs, self.semantic_weights)
         return abstract_features """
 
+
+""" The custom layer SemanticMappingLayer is added after the dense layers. This layer is responsible for discovering abstract 
+features and mapping them to the specified semantic features.
+Semantic features are defined based on specificity, coverage, and fault location, each classified into three levels.
+The weights of the custom layer are initialized randomly and trained along with the rest of the network to learn the mapping
+ from abstract features to semantic features.
+After training, the model can predict the relevance of tests for any reported error,
+ incorporating the learned abstract features and semantic mappings. """
+
 class SemanticMappingLayer(tf.keras.layers.Layer):
     def __init__(self, num_features, num_classes, **kwargs):
         super(SemanticMappingLayer, self).__init__(**kwargs)
@@ -66,6 +75,10 @@ class SemanticMappingLayer(tf.keras.layers.Layer):
         abstract_features = tf.matmul(inputs[:, :self.num_features // 2], self.semantic_weights)
         return abstract_features
 
+""" During training, the neural net adjusts the weights within the SML based on the 
+error-test associations (e.g. ping, traceroute, etc for "Timeout" type of error) present in the training data 
+and then using backpropagation, the mapping takes place. I have used Specificity, Coverage,
+and Location for now and split them into 3 tiers (Level I, II and III - which I will describe later) each. """
 
 # Define the model
 model = tf.keras.Sequential([
