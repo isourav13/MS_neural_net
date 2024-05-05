@@ -88,3 +88,9 @@ predicted_specificity, predicted_coverage, predicted_fault_location = model.pred
 print("Predicted Specificity:", predicted_specificity)
 print("Predicted Coverage:", predicted_coverage)
 print("Predicted Fault Location:", predicted_fault_location)
+
+training_data = [
+    (error_to_index['timeout'], [test_to_index['ping']], 'low', 'high'),
+    (error_to_index['timeout'], [test_to_index['traceroute']], 'medium', 'high'),
+    (error_to_index['timeout'], [test_to_index['destination_rules']], 'high','low'),
+]
