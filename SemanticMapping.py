@@ -34,17 +34,23 @@ y = []
 for error in reported_errors:
     for test in tests:
         X.append(error_features[error] + test_features[test])
-        y.append(test in error)
+        y.append(int(test in error))
 
 X = np.array(X)
 y = np.array(y)
 
+print("Shape of X:", X.shape)
+print("Shape of y:", y.shape)
+
 # Split data into training and testing sets
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
+print("Shape of X_train:", X_train.shape)
+print("Shape of X_test:", X_test.shape)  # Add this line to check the shape of X_test
+
 # Define the neural network model
 model = tf.keras.models.Sequential([
-    tf.keras.layers.Dense(64, activation='relu', input_shape=(len(error_features) + len(test_features),)),
+    tf.keras.layers.Dense(64, activation='relu', input_shape=(8,)),  # Update to actual number of features (8)
     tf.keras.layers.Dense(32, activation='relu'),
     tf.keras.layers.Dense(1, activation='sigmoid')
 ])
@@ -52,14 +58,21 @@ model = tf.keras.models.Sequential([
 # Compile the model
 model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
 
+
 # Train the model
-model.fit(X_train, y_train, epochs=10, batch_size=32, validation_data=(X_test, y_test))
+model.fit(X_train, y_train, epochs=20, batch_size=32, validation_data=(X_test, y_test))
+
+# Evaluate the model
+loss, accuracy = model.evaluate(X_test, y_test)
+print("Loss on test set:", loss)
+print("Accuracy on test set:", accuracy)
 
 # Predict probabilities for each test for a particular error
 error_to_predict = 'timeout'
 X_predict = np.array([error_features[error_to_predict] + test_features[test] for test in tests])
-probabilities = model.predict(X_predict)
 
-# Print probabilities
-for test, prob in zip(tests, probabilities):
-    print(f"Probability of test '{test}' for error '{error_to_predict}': {prob[0]}")
+# **Improved readability for predictions**
+test_probabilities = dict(zip(tests, model.predict(X_predict).squeeze()))  # Create dictionary for test-probability
+
+
+print(test_probabilities)
