@@ -76,3 +76,9 @@ test_probabilities = dict(zip(tests, model.predict(X_predict).squeeze()))  # Cre
 
 
 print(test_probabilities)
+
+
+# Summary of Input/Outputs
+# Input: Combined feature vectors from reported errors and tests (8 features each).
+# Output: Binary labels indicating the relevance of tests to errors.
+# Prediction: Probabilities indicating the likelihood that each test is relevant to diagnosing a specific error.
